@@ -79,7 +79,7 @@ public class SecurityFilter implements Filter {git
         }
 
         /*
-         * 2. Підрахунок ризику
+         * 2.  Підрахунок ризику
          */
         int riskScore = riskEngine.calculate(method, path, params, request.getHeaderNames(), request);
 
