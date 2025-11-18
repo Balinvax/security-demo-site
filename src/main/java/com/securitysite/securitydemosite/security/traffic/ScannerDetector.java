@@ -1,4 +1,4 @@
-package com.securitysite.securitydemosite.security.scanner;
+package com.securitysite.securitydemosite.security.traffic;
 
 import java.time.Instant;
 import java.util.Map;

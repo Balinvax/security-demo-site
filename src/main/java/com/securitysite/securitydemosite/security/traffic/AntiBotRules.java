@@ -1,4 +1,4 @@
-package com.securitysite.securitydemosite.security.bot;
+package com.securitysite.securitydemosite.security.traffic;
 
 import jakarta.servlet.http.HttpServletRequest;
 

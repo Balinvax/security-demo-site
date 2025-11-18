@@ -15,7 +15,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
 
-public class SecurityFilter implements Filter {git
+public class SecurityFilter implements Filter {
 
     private final RiskEngine riskEngine;
     private final AdaptiveEngine adaptiveEngine;

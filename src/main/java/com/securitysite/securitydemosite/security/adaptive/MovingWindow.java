@@ -1,4 +1,4 @@
-package com.securitysite.securitydemosite.adaptive;
+package com.securitysite.securitydemosite.security.adaptive;
 
 import java.util.LinkedList;
 

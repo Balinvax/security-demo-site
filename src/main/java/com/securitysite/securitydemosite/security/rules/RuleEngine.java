@@ -1,10 +1,12 @@
-package com.securitysite.securitydemosite.security.ruledsl;
+package com.securitysite.securitydemosite.security.rules;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static java.lang.Double.parseDouble;
 
 public class RuleEngine {
 
@@ -100,7 +102,7 @@ public class RuleEngine {
         if (cond.contains(">")) {
             String[] parts = cond.split(">");
             double left = parseDouble(resolveField(parts[0].trim(), req, ctx));
-            double right = Double.parseDouble(parts[1].trim());
+            double right = parseDouble(parts[1].trim());
             return left > right;
         }
 

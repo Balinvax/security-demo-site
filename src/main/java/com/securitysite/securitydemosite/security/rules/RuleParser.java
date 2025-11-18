@@ -1,4 +1,4 @@
-package com.securitysite.securitydemosite.security.ruledsl;
+package com.securitysite.securitydemosite.security.rules;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

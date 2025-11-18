@@ -1,4 +1,4 @@
-package com.securitysite.securitydemosite.security.ruledsl;
+package com.securitysite.securitydemosite.security.rules;
 
 public class CompiledRule {
 

@@ -1,4 +1,4 @@
-package com.securitysite.securitydemosite.adaptive;
+package com.securitysite.securitydemosite.security.adaptive;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.LinkedList;

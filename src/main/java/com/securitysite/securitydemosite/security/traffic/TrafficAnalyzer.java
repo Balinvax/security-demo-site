@@ -1,8 +1,8 @@
-package com.securitysite.securitydemosite.security;
+package com.securitysite.securitydemosite.security.traffic;
 
-import com.securitysite.securitydemosite.security.rate.RateLimiter;
-import com.securitysite.securitydemosite.security.scanner.ScannerDetector;
-import com.securitysite.securitydemosite.security.bot.AntiBotRules;
+import com.securitysite.securitydemosite.security.traffic.RateLimiter;
+import com.securitysite.securitydemosite.security.traffic.ScannerDetector;
+import com.securitysite.securitydemosite.security.traffic.AntiBotRules;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;

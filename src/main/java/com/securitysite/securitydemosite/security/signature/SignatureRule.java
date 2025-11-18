@@ -1,4 +1,4 @@
-package com.securitysite.securitydemosite.security;
+package com.securitysite.securitydemosite.security.signature;
 
 import java.util.regex.Pattern;
 
