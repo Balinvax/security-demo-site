@@ -2,8 +2,9 @@ package com.securitysite.securitydemosite.security.rules;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.*;
-import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 public class RuleParser {
 
@@ -22,7 +23,6 @@ public class RuleParser {
                 line = line.trim();
 
                 if (line.isEmpty() || line.startsWith("#")) continue;
-
                 if (!line.startsWith("RULE")) continue;
 
                 CompiledRule rule = parseRule(line);
@@ -36,10 +36,29 @@ public class RuleParser {
         return rules;
     }
 
+    /**
+     * Парсинг правил із багаторядкового тексту (для config’а).
+     */
+    public RuleEngine parse(String text) {
+        List<CompiledRule> rules = new ArrayList<>();
+        if (text == null) {
+            return new RuleEngine(rules);
+        }
 
+        String[] lines = text.split("\\R");
+        for (String raw : lines) {
+            String line = raw.trim();
+            if (line.isEmpty() || line.startsWith("#")) continue;
+            if (!line.startsWith("RULE")) continue;
+
+            rules.add(parseRule(line));
+        }
+
+        return new RuleEngine(rules);
+    }
+
+    // RULE BLOCK_XSS IF param CONTAINS "<script"
     private CompiledRule parseRule(String line) {
-
-        // RULE BLOCK_XSS IF param CONTAINS "<script"
         if (!line.contains(" IF ")) {
             throw new RuntimeException("Invalid rule syntax: " + line);
         }

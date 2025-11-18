@@ -4,50 +4,39 @@ public class SignatureMatch {
 
     private final String ruleId;
     private final AttackType attackType;
-    private final String location;    // PATH, QUERY, PARAM:name, HEADER:User-Agent, ...
-    private final String description; // короткий опис правила
-    private final String valueSample; // фрагмент значення, де знайдено збіг
+    private final String location;
+    private final String description;
+    private final String sample;
 
     public SignatureMatch(String ruleId,
                           AttackType attackType,
                           String location,
                           String description,
-                          String valueSample) {
+                          String sample) {
         this.ruleId = ruleId;
         this.attackType = attackType;
         this.location = location;
         this.description = description;
-        this.valueSample = valueSample;
+        this.sample = sample;
     }
 
-    public String getRuleId() {
+    public String ruleId() {
         return ruleId;
     }
 
-    public AttackType getAttackType() {
+    public AttackType attackType() {
         return attackType;
     }
 
-    public String getLocation() {
+    public String location() {
         return location;
     }
 
-    public String getDescription() {
+    public String description() {
         return description;
     }
 
-    public String getValueSample() {
-        return valueSample;
-    }
-
-    @Override
-    public String toString() {
-        return "SignatureMatch{" +
-                "ruleId='" + ruleId + '\'' +
-                ", attackType=" + attackType +
-                ", location='" + location + '\'' +
-                ", description='" + description + '\'' +
-                ", valueSample='" + valueSample + '\'' +
-                '}';
+    public String sample() {
+        return sample;
     }
 }

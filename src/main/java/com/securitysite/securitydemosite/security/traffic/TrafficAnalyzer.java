@@ -1,18 +1,23 @@
 package com.securitysite.securitydemosite.security.traffic;
 
-import com.securitysite.securitydemosite.security.traffic.RateLimiter;
-import com.securitysite.securitydemosite.security.traffic.ScannerDetector;
-import com.securitysite.securitydemosite.security.traffic.AntiBotRules;
-
 import jakarta.servlet.http.HttpServletRequest;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class TrafficAnalyzer {
 
-    private final RateLimiter rateLimiter = new RateLimiter();
-    private final ScannerDetector scannerDetector = new ScannerDetector();
-    private final AntiBotRules botRules = new AntiBotRules();
+    private final RateLimiter rateLimiter;
+    private final ScannerDetector scannerDetector;
+    private final AntiBotRules botRules;
+
+    public TrafficAnalyzer(RateLimiter rateLimiter,
+                           ScannerDetector scannerDetector,
+                           AntiBotRules botRules) {
+        this.rateLimiter = rateLimiter;
+        this.scannerDetector = scannerDetector;
+        this.botRules = botRules;
+    }
 
     public List<String> analyze(HttpServletRequest req, int statusCode) {
 

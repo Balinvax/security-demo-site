@@ -1,6 +1,7 @@
 package com.securitysite.securitydemosite.security.adaptive;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AdaptiveStats {
 
@@ -11,13 +12,20 @@ public class AdaptiveStats {
 
     public synchronized void update(RequestSnapshot snap, int statusCode) {
 
-        userAgentFreq.merge(snap.userAgent == null ? "NULL" : snap.userAgent, 1, Integer::merge);
-        urlFreq.merge(snap.path, 1, Integer::merge);
+        userAgentFreq.merge(
+                snap.userAgent == null ? "NULL" : snap.userAgent,
+                1,
+                Integer::sum
+        );
+
+        urlFreq.merge(snap.path, 1, Integer::sum);
 
         for (String p : snap.params.keySet()) {
-            paramFreq.merge(p, 1, Integer::merge);
+            paramFreq.merge(p, 1, Integer::sum);
         }
 
-        if (statusCode >= 400) errorCount++;
+        if (statusCode >= 400) {
+            errorCount++;
+        }
     }
 }

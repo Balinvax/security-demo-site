@@ -35,13 +35,6 @@ public class RuleEngine {
 
         cond = cond.trim();
 
-        // Підтримуємо:
-        // - CONTAINS
-        // - MATCHES /regex/
-        // - IN [..]
-        // - порівняння
-        // - role, method, ip, path, param
-
         // ============================
         // 1) CONTAINS
         // ============================
@@ -87,7 +80,7 @@ public class RuleEngine {
         }
 
         // ============================
-        // 5) role != "ADMIN"
+        // 5) !=
         // ============================
         if (cond.contains("!=")) {
             String[] parts = cond.split("!=");
@@ -97,17 +90,30 @@ public class RuleEngine {
         }
 
         // ============================
-        // 6) >, <, >=, <=
+        // 6) >
         // ============================
         if (cond.contains(">")) {
             String[] parts = cond.split(">");
-            double left = parseDouble(resolveField(parts[0].trim(), req, ctx));
-            double right = parseDouble(parts[1].trim());
-            return left > right;
+            String leftRaw = resolveField(parts[0].trim(), req, ctx);
+            String rightRaw = parts[1].trim();
+
+            if (leftRaw == null || rightRaw == null || leftRaw.equals("null")) {
+                return false;
+            }
+
+            try {
+                double left = Double.parseDouble(leftRaw);
+                double right = Double.parseDouble(rightRaw);
+                return left > right;
+            } catch (NumberFormatException e) {
+                return false;
+            }
         }
 
-        return false; // якщо не впізнали правило
+        return false; // якщо не впізнали конструкцію
     }
+
+
 
 
     private String resolveField(String token, HttpServletRequest req, Map<String, Object> ctx) {
