@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Security Demo Site – Кабінет користувача</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header>
+    <img src="/img/logo.png" alt="Logo" class="logo">
+    <div class="title">Security Demo Site</div>
+    <nav>
+        <a href="/">Головна</a>
+        <a href="/login">Вхід</a>
+        <a href="/register">Реєстрація</a>
+        <a href="/profile">Кабінет</a>
+        <a href="/auth/logout">Вихід</a>
+    </nav>
+</header>
+
+<main>
+    <h1>Кабінет користувача</h1>
+    <p>Ви успішно увійшли до системи.</p>
+
+    <h2>Інформація про користувача</h2>
+    <p class="info-row">ПІБ: <span id="fullName"></span></p>
+    <p class="info-row">Email: <span id="email"></span></p>
+
+    <p><a href="/auth/logout">Вийти з акаунту</a></p>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        fetch('/api/auth/me', {credentials: 'same-origin'})
+            .then(r => r.json())
+            .then(data => {
+                if (!data.authenticated) {
+                    window.location.href = '/login';
+                    return;
+                }
+                document.getElementById('fullName').textContent = data.fullName || '';
+                document.getElementById('email').textContent = data.email || '';
+            })
+            .catch(() => {
+                window.location.href = '/login';
+            });
+    });
+</script>
+</body>
+</html>

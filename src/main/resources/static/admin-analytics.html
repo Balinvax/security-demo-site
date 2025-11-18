@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Analytics</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+<header>
+    <img src="/img/logo.png" class="logo">
+    <div class="title">Security Demo Site — Analytics</div>
+    <nav>
+        <a href="/">Головна</a>
+        <a href="/admin">Адмін</a>
+        <a href="/auth/logout">Вихід</a>
+    </nav>
+</header>
+
+<main>
+    <h1>Аналітика атак</h1>
+
+    <section>
+        <h2>Кількість атак за правилами</h2>
+        <pre id="rules"></pre>
+    </section>
+
+    <section>
+        <h2>Найпопулярніші URL</h2>
+        <pre id="paths"></pre>
+    </section>
+
+    <section>
+        <h2>ТОП-10 небезпечних IP</h2>
+        <pre id="ips"></pre>
+    </section>
+
+    <section>
+        <h2>Активність по годинам</h2>
+        <pre id="hours"></pre>
+    </section>
+
+    <section>
+        <h2>Heatmap (дні × години)</h2>
+        <pre id="heatmap"></pre>
+    </section>
+
+    <section>
+        <h2>Статистика ризиків</h2>
+        <pre id="risk"></pre>
+    </section>
+</main>
+
+<script>
+    async function load(id, url) {
+        const r = await fetch(url);
+        document.getElementById(id).innerText = JSON.stringify(await r.json(), null, 2);
+    }
+
+    load("rules", "/api/admin/analytics/rules");
+    load("paths", "/api/admin/analytics/paths");
+    load("ips", "/api/admin/analytics/ip");
+    load("hours", "/api/admin/analytics/hours");
+    load("heatmap", "/api/admin/analytics/heatmap");
+    load("risk", "/api/admin/analytics/risk");
+</script>
+
+</body>
+</html>

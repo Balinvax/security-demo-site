@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+<header>
+    <img src="/img/logo.png" class="logo">
+    <div class="title">Security Demo Site</div>
+    <nav>
+        <a href="/">Головна</a>
+        <a href="/profile">Кабінет</a>
+        <a href="/auth/logout">Вихід</a>
+    </nav>
+</header>
+
+<main>
+    <h1>Адмін панель</h1>
+
+    <table border="1" cellpadding="5" style="background: white;">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Email</th>
+            <th>ПІБ</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- ⚠️ ВАЖЛИВО: Це НЕ Thymeleaf — тут буде вставляти JS -->
+        </tbody>
+    </table>
+
+    <p>Це демонстрація сторінки, що має бути доступна тільки адміністратору.</p>
+</main>
+
+<script>
+    async function loadUsers() {
+        const response = await fetch('/api/users');
+        const users = await response.json();
+
+        let rows = "";
+        for (const u of users) {
+            rows += `<tr>
+                        <td>${u.id}</td>
+                        <td>${u.email}</td>
+                        <td>${u.fullName}</td>
+                    </tr>`;
+        }
+
+        document.querySelector("tbody").innerHTML = rows;
+    }
+
+    loadUsers();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Security Demo Site – Вхід</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header>
+    <img src="/img/logo.png" alt="Logo" class="logo">
+    <div class="title">Security Demo Site</div>
+    <nav>
+        <a href="/">Головна</a>
+        <a href="/login">Вхід</a>
+        <a href="/register">Реєстрація</a>
+        <a href="/profile">Кабінет</a>
+    </nav>
+</header>
+
+<main>
+    <h1>Вхід до системи</h1>
+
+    <form action="/auth/login" method="post">
+        <label>
+            Email:
+            <input type="email" name="email" required>
+        </label>
+        <label>
+            Пароль:
+            <input type="password" name="password" required>
+        </label>
+        <button type="submit">Увійти</button>
+    </form>
+
+    <p>Немає акаунту? <a href="/register">Зареєструватись</a></p>
+</main>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Security Events Log</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+<header>
+    <img src="/img/logo.png" class="logo">
+    <div class="title">Security Demo Site — Security Log</div>
+    <nav>
+        <a href="/">Головна</a>
+        <a href="/admin">Адмін</a>
+        <a href="/auth/logout">Вихід</a>
+    </nav>
+</header>
+
+<main>
+    <h1>Журнал інцидентів</h1>
+
+    <div>
+        <h3>Фільтр по IP:</h3>
+        <input id="ip" placeholder="Наприклад 127.0.0.1">
+        <button onclick="filterByIp()">Фільтрувати</button>
+
+        <h3>Фільтр по правилу:</h3>
+        <input id="rule" placeholder="Напр: SQLI, XSS, RATE_LIMIT">
+        <button onclick="filterByRule()">Фільтрувати</button>
+
+        <h3>Фільтр по даті:</h3>
+        <input type="datetime-local" id="start">
+        <input type="datetime-local" id="end">
+        <button onclick="filterByDate()">Фільтрувати</button>
+
+        <button onclick="loadAll()">Показати все</button>
+    </div>
+
+    <table border="1" cellpadding="5" style="background:white;margin-top:20px;">
+        <thead>
+        <tr>
+            <th>Дата</th>
+            <th>IP</th>
+            <th>Метод</th>
+            <th>URL</th>
+            <th>Правило</th>
+            <th>Ризик</th>
+            <th>Рішення</th>
+        </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+    </table>
+</main>
+
+<script>
+    async function load(url) {
+        const r = await fetch(url);
+        const data = await r.json();
+        let html = "";
+
+        for (const e of data) {
+            html += `<tr>
+                <td>${e.timestamp}</td>
+                <td>${e.ip}</td>
+                <td>${e.method}</td>
+                <td>${e.path}</td>
+                <td>${e.ruleTrigger}</td>
+                <td>${e.riskScore}</td>
+                <td>${e.decision}</td>
+            </tr>`;
+        }
+
+        document.getElementById("rows").innerHTML = html;
+    }
+
+    function loadAll() { load('/api/admin/events'); }
+    function filterByIp() {
+        const ip = document.getElementById('ip').value;
+        load('/api/admin/events/ip/' + ip);
+    }
+    function filterByRule() {
+        const rule = document.getElementById('rule').value;
+        load('/api/admin/events/rule/' + rule);
+    }
+    function filterByDate() {
+        const s = document.getElementById('start').value;
+        const e = document.getElementById('end').value;
+        load(`/api/admin/events/date?start=${s}&end=${e}`);
+    }
+
+    loadAll();
+</script>
+</body>
+</html>
