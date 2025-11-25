@@ -9,10 +9,13 @@ import com.securitysite.securitydemosite.security.signature.SignatureEngine;
 import com.securitysite.securitydemosite.security.signature.SignatureMatch;
 import com.securitysite.securitydemosite.security.traffic.TrafficAnalyzer;
 import com.securitysite.securitydemosite.service.SecurityLogService;
+
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletResponseWrapper;
+
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -27,6 +30,9 @@ public class SecurityFilter implements Filter {
     private final RuleEngine ruleEngine;
     private final TrafficAnalyzer trafficAnalyzer;
     private final SecurityLogService logService;
+
+    @Value("${security.traffic.enabled:true}")
+    private boolean trafficEnabled;
 
     public SecurityFilter(
             RiskEngine riskEngine,
@@ -56,47 +62,49 @@ public class SecurityFilter implements Filter {
         String path = request.getRequestURI();
         Map<String, String[]> params = request.getParameterMap();
 
-        // =========================
-        // 1. Попередній аналіз трафіку (rate-limit, POST flood, User-Agent)
-        // =========================
-        List<String> preAlerts = trafficAnalyzer.analyze(request, 0);
-        if (!preAlerts.isEmpty()) {
-            // серйозні алерти -> одразу блокуємо
-            if (preAlerts.contains("RATE_LIMIT_EXCEEDED")
-                    || preAlerts.contains("POST_FLOOD_DETECTED")
-                    || preAlerts.contains("BAD_USER_AGENT")) {
+        // =====================================================
+        // 1. Traffic Analyzer (Rate-limit, POST flood...)
+        //    — вимикається у тестовому профілі
+        // =====================================================
+        if (trafficEnabled) {
+            List<String> preAlerts = trafficAnalyzer.analyze(request, 0);
 
-                int riskScore = 80;
-                logService.log(request,
-                        String.join(",", preAlerts),
-                        riskScore,
-                        "BLOCK",
-                        params);
+            if (!preAlerts.isEmpty()) {
+                if (preAlerts.contains("RATE_LIMIT_EXCEEDED")
+                        || preAlerts.contains("POST_FLOOD_DETECTED")
+                        || preAlerts.contains("BAD_USER_AGENT")) {
 
-                response.setStatus(429);
-                response.getWriter().write("Request blocked by traffic policy");
-                return;
+                    logService.log(request,
+                            String.join(",", preAlerts),
+                            80,
+                            "BLOCK",
+                            params);
+
+                    response.setStatus(429);
+                    response.getWriter().write("Request blocked by traffic policy");
+                    return;
+                }
             }
         }
 
-        // =========================
+        // =====================================================
         // 2. Risk Engine
-        // =========================
+        // =====================================================
         RiskScore baseRisk = riskEngine.evaluate(request);
         int riskScore = baseRisk.value();
 
-        // =========================
+        // =====================================================
         // 3. Adaptive Engine
-        // (поки без реального payloadSize і statusCode — ставимо 0 та 200)
-        // =========================
+        // =====================================================
         RiskEvent adaptive = adaptiveEngine.process(request, 0, 200);
         riskScore += adaptive.score;
 
-        // =========================
-        // 4. Signature Engine (XSS, SQLi, Path Traversal ...)
-        // =========================
+        // =====================================================
+        // 4. Signature Engine (XSS, SQLi, Path Traversal)
+        // =====================================================
         List<SignatureMatch> matches = signatureEngine.analyze(request);
         if (!matches.isEmpty()) {
+
             SignatureMatch m = matches.get(0);
             String ruleName = "SIG:" + m.attackType().name() + ":" + m.ruleId();
 
@@ -111,20 +119,19 @@ public class SecurityFilter implements Filter {
             return;
         }
 
-        // =========================
+        // =====================================================
         // 5. Rule DSL Engine
-        // =========================
+        // =====================================================
         Map<String, Object> ctx = new HashMap<>();
-        // роль з сесії (для правил типу role != "ADMIN")
+
         if (request.getSession(false) != null) {
             Object role = request.getSession(false).getAttribute("role");
-            if (role != null) {
-                ctx.put("role", role.toString());
-            }
+            if (role != null) ctx.put("role", role.toString());
         }
 
         List<String> triggeredRules = ruleEngine.evaluate(request, ctx);
         if (!triggeredRules.isEmpty()) {
+
             logService.log(request,
                     "RULE:" + String.join(",", triggeredRules),
                     riskScore,
@@ -136,9 +143,9 @@ public class SecurityFilter implements Filter {
             return;
         }
 
-        // =========================
-        // 6. Поріг ризику
-        // =========================
+        // =====================================================
+        // 6. Risk threshold
+        // =====================================================
         if (riskScore >= 70) {
             logService.log(request,
                     "RISK_ENGINE",
@@ -151,30 +158,32 @@ public class SecurityFilter implements Filter {
             return;
         }
 
-        // =========================
-        // 7. Логування дозволеного запиту
-        // =========================
+        // =====================================================
+        // 7. Log ALLOW
+        // =====================================================
         logService.log(request,
                 "OK",
                 riskScore,
                 "ALLOW",
                 params);
 
-        // =========================
-        // 8. Пропускаємо запит далі
-        // =========================
+        // =====================================================
+        // 8. Continue filter chain
+        // =====================================================
         chain.doFilter(request, response);
 
-        // =========================
-        // 9. Постфактум аналіз (404 → scanner, UA тощо)
-        // =========================
-        int statusCode = response.getStatus();
-        trafficAnalyzer.analyze(request, statusCode);
+        // =====================================================
+        // 9. Post-response analysis (404 → scanner)
+        // =====================================================
+        if (trafficEnabled) {
+            int statusCode = response.getStatus();
+            trafficAnalyzer.analyze(request, statusCode);
+        }
     }
 
-    /**
-     * Обгортка для збереження HTTP статусу відповіді.
-     */
+    // ---------------------------------------------------------
+    // Wrapper to capture HTTP response code
+    // ---------------------------------------------------------
     private static class SecurityResponseWrapper extends HttpServletResponseWrapper {
 
         private int httpStatus = SC_OK;
