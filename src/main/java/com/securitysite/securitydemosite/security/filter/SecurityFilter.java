@@ -30,11 +30,6 @@ public class SecurityFilter implements Filter {
     @Value("${security.traffic.enabled:true}")
     private boolean trafficEnabled;
 
-    @Value("${security.whitelist:}")
-    private String whitelistRaw;
-
-    private List<String> whitelist = new ArrayList<>();
-
     public SecurityFilter(
             RiskEngine riskEngine,
             AdaptiveEngine adaptiveEngine,
@@ -50,35 +45,6 @@ public class SecurityFilter implements Filter {
         this.trafficAnalyzer = trafficAnalyzer;
         this.logService = logService;
     }
-
-    @Override
-    public void init(FilterConfig filterConfig) {
-        if (whitelistRaw != null && !whitelistRaw.isEmpty()) {
-            whitelist = Arrays.stream(whitelistRaw.split(","))
-                    .map(String::trim)
-                    .filter(s -> !s.isEmpty())
-                    .toList();
-        }
-    }
-
-    // -------- Перевірка білого списку ----------
-    private boolean isWhitelisted(String path) {
-        if (whitelist.isEmpty()) return false;
-
-        for (String pattern : whitelist) {
-
-            // підтримка /path/*
-            if (pattern.endsWith("/*")) {
-                String base = pattern.substring(0, pattern.length() - 2);
-                if (path.startsWith(base)) return true;
-            }
-
-            // точне співпадіння
-            if (pattern.equals(path)) return true;
-        }
-        return false;
-    }
-
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {
@@ -90,16 +56,6 @@ public class SecurityFilter implements Filter {
         String method = request.getMethod();
         Map<String, String[]> params = request.getParameterMap();
 
-        // ---------------------------------------------------------
-        // БІЛИЙ СПИСОК — ПРОПУСКАЄМО ВСЕ БЕЗ АНАЛІЗУ
-        // ---------------------------------------------------------
-        if (isWhitelisted(path)) {
-
-            logService.log(request, "WHITELIST", 0, "ALLOW", params);
-
-            chain.doFilter(request, response);
-            return;
-        }
 
         // =====================================================
         // Traffic Analyzer (Rate-limit, POST flood...)
