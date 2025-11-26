@@ -2,8 +2,44 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Security Events Log</title>
+    <title>Security Demo Site — Security Log</title>
     <link rel="stylesheet" href="/css/style.css">
+
+    <!-- Локальні стилі для картки і таблиці -->
+    <style>
+        main {
+            max-width: 1500px;
+            margin: 40px auto;
+        }
+
+        .admin-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .admin-card h1 {
+            margin-top: 0;
+        }
+
+        .table-wrapper {
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+
+        .admin-card table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #ffffff;
+        }
+
+        .admin-card th,
+        .admin-card td {
+            padding: 8px 10px;
+            border: 1px solid #ccc; /* повернули контури */
+        }
+    </style>
 </head>
 
 <body>
@@ -17,64 +53,97 @@
         <a href="/profile">Кабінет</a>
         <a href="/auth/logout">Вихід</a>
         <a href="/admin">Адмін</a>
-        <a href="/admin-analytics">Аналітика</a>
-        <a href="/admin-events">Журнал подій</a>
+        <a href="/admin/analytics">Аналітика</a>
+        <a href="/admin/events">Журнал подій</a>
     </nav>
 </header>
 
 <main>
-    <h1>Журнал інцидентів</h1>
+    <div class="admin-card">
+        <h1>Журнал інцидентів</h1>
 
-    <div>
-        <h3>Фільтр по IP:</h3>
-        <input id="ip" placeholder="Наприклад 127.0.0.1">
-        <button onclick="filterByIp()">Фільтрувати</button>
+        <div>
+            <h3>Фільтр по IP:</h3>
+            <input id="ip" placeholder="Наприклад 127.0.0.1">
+            <button onclick="filterByIp()">Фільтрувати</button>
 
-        <h3>Фільтр по правилу:</h3>
-        <input id="rule" placeholder="Напр: SQLI, XSS, RATE_LIMIT">
-        <button onclick="filterByRule()">Фільтрувати</button>
+            <h3>Фільтр по правилу:</h3>
+            <input id="rule" placeholder="Напр: SQLI, XSS, RATE_LIMIT">
+            <button onclick="filterByRule()">Фільтрувати</button>
 
-        <h3>Фільтр по даті:</h3>
-        <input type="datetime-local" id="start">
-        <input type="datetime-local" id="end">
-        <button onclick="filterByDate()">Фільтрувати</button>
+            <h3>Фільтр по даті:</h3>
+            <input type="datetime-local" id="start">
+            <input type="datetime-local" id="end">
+            <button onclick="filterByDate()">Фільтрувати</button>
 
-        <button onclick="loadAll()">Показати все</button>
+            <button onclick="loadAll()">Показати все</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>IP</th>
+                    <th>Метод</th>
+                    <th>URL</th>
+                    <th>Правило</th>
+                    <th>Ризик</th>
+                    <th>Рішення</th>
+                </tr>
+                </thead>
+                <tbody id="rows"></tbody>
+            </table>
+        </div>
     </div>
-
-    <table border="1" cellpadding="5" style="background:white;margin-top:20px;">
-        <thead>
-        <tr>
-            <th>Дата</th>
-            <th>IP</th>
-            <th>Метод</th>
-            <th>URL</th>
-            <th>Правило</th>
-            <th>Ризик</th>
-            <th>Рішення</th>
-        </tr>
-        </thead>
-        <tbody id="rows"></tbody>
-    </table>
 </main>
 
 <script>
+    // Форматування ISO-дати
+    function formatDate(isoString) {
+        if (!isoString) return '';
+        const d = new Date(isoString);
+        if (isNaN(d.getTime())) return isoString;
+
+        const pad = n => n.toString().padStart(2, '0');
+        const day   = pad(d.getDate());
+        const month = pad(d.getMonth() + 1);
+        const year  = d.getFullYear();
+        const hour  = pad(d.getHours());
+        const min   = pad(d.getMinutes());
+        const sec   = pad(d.getSeconds());
+
+        return `${day}.${month}.${year} ${hour}:${min}:${sec}`;
+    }
+
+    // Екранування від XSS
+    function esc(value) {
+        if (value === null || value === undefined) return '';
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     async function load(url) {
-        const r = await fetch(url, {
-            credentials: "include"
-        });
+        const r = await fetch(url, { credentials: "include" });
         const data = await r.json();
+
         let html = "";
 
         for (const e of data) {
+            const ip = (e.ip === '0:0:0:0:0:0:0:1') ? '127.0.0.1' : e.ip;
+
             html += `<tr>
-                <td>${e.timestamp}</td>
-                <td>${e.ip}</td>
-                <td>${e.method}</td>
-                <td>${e.path}</td>
-                <td>${e.ruleTrigger}</td>
-                <td>${e.riskScore}</td>
-                <td>${e.decision}</td>
+                <td>${esc(formatDate(e.timestamp))}</td>
+                <td>${esc(ip)}</td>
+                <td>${esc(e.method)}</td>
+                <td>${esc(e.path)}</td>
+                <td>${esc(e.ruleTrigger)}</td>
+                <td>${esc(e.riskScore)}</td>
+                <td>${esc(e.decision)}</td>
             </tr>`;
         }
 
@@ -82,21 +151,37 @@
     }
 
     function loadAll() { load('/api/admin/events'); }
+
     function filterByIp() {
-        const ip = document.getElementById('ip').value;
-        load('/api/admin/events/ip/' + ip);
+        const ip = document.getElementById('ip').value.trim();
+        if (!ip) {
+            loadAll();
+        } else {
+            load('/api/admin/events/ip/' + encodeURIComponent(ip));
+        }
     }
+
     function filterByRule() {
-        const rule = document.getElementById('rule').value;
-        load('/api/admin/events/rule/' + rule);
+        const rule = document.getElementById('rule').value.trim();
+        if (!rule) {
+            loadAll();
+        } else {
+            load('/api/admin/events/rule/' + encodeURIComponent(rule));
+        }
     }
+
     function filterByDate() {
         const s = document.getElementById('start').value;
         const e = document.getElementById('end').value;
-        load(`/api/admin/events/date?start=${s}&end=${e}`);
+        if (!s || !e) {
+            loadAll();
+        } else {
+            load(`/api/admin/events/date?start=${encodeURIComponent(s)}&end=${encodeURIComponent(e)}`);
+        }
     }
 
     loadAll();
 </script>
+
 </body>
 </html>
