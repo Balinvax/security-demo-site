@@ -35,8 +35,8 @@ header nav a:hover {
 }
 
 main {
-    max-width: 800px;
-    margin: 32px auto;
+    max-width: 1100px;
+    margin: 40px auto;
     background: white;
     padding: 24px 32px;
     border-radius: 12px;

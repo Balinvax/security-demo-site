@@ -8,7 +8,12 @@ import java.util.List;
 import java.util.UUID;
 
 public interface SecurityEventRepository extends JpaRepository<SecurityEvent, UUID> {
+
     List<SecurityEvent> findByIp(String ip);
     List<SecurityEvent> findByRuleTrigger(String ruleTrigger);
+    List<SecurityEvent> findByRuleTriggerContainingIgnoreCase(String ruleTrigger);
     List<SecurityEvent> findByTimestampBetween(LocalDateTime start, LocalDateTime end);
+    List<SecurityEvent> findAll();
+
+
 }

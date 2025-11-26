@@ -11,7 +11,6 @@ import com.securitysite.securitydemosite.security.traffic.RateLimiter;
 import com.securitysite.securitydemosite.security.traffic.ScannerDetector;
 import com.securitysite.securitydemosite.security.traffic.TrafficAnalyzer;
 import com.securitysite.securitydemosite.service.SecurityLogService;
-
 import jakarta.servlet.Filter;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -44,11 +43,11 @@ public class SecurityFilterConfig {
         RuleParser parser = new RuleParser();
 
         String rules = """
-            RULE BLOCK_XSS IF param CONTAINS "<script"
-            RULE BLOCK_SQLI IF param CONTAINS "select "
-            RULE LIMIT_RATE IF ip.req_per_min > 50
-            RULE BLOCK_METHOD IF method NOT IN [GET, POST]
-        """;
+                    RULE BLOCK_XSS IF param CONTAINS "<script"
+                    RULE BLOCK_SQLI IF param CONTAINS "select "
+                    RULE LIMIT_RATE IF ip.req_per_min > 50
+                    RULE BLOCK_METHOD IF method NOT IN [GET, POST]
+                """;
 
         return parser.parse(rules); // ← правильне використання
     }

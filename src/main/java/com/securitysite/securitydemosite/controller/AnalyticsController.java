@@ -2,10 +2,14 @@ package com.securitysite.securitydemosite.controller;
 
 import com.securitysite.securitydemosite.repository.SecurityEventRepository;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -18,14 +22,34 @@ public class AnalyticsController {
         this.repo = repo;
     }
 
+    // Уніфікована перевірка адміна
     private boolean isAdmin(HttpSession session) {
-        return "ADMIN".equals(session.getAttribute("role"));
+
+
+        if (session == null) {
+            System.out.println("SESSION = null");
+            return false;
+        }
+
+        Object role = session.getAttribute("role");
+
+        if (role == null) return false;
+
+        String r = role.toString();
+        // Покриваємо "ADMIN", "ROLE_ADMIN", "ROLE_ADMIN,ROLE_USER" і т.п.
+        return r.equals("ADMIN")
+                || r.equals("ROLE_ADMIN")
+                || r.contains("ADMIN");
     }
 
     @GetMapping("/rules")
     public Map<String, Long> attacksByRule(HttpSession session) {
         if (!isAdmin(session)) return Map.of();
-        return repo.findAll().stream()
+
+        var events = repo.findAll();
+        System.out.println("ANALYTICS /rules, events count = " + events.size());
+
+        return events.stream()
                 .collect(Collectors.groupingBy(
                         e -> Optional.ofNullable(e.getRuleTrigger()).orElse("UNKNOWN"),
                         Collectors.counting()
@@ -35,7 +59,11 @@ public class AnalyticsController {
     @GetMapping("/paths")
     public Map<String, Long> popularPaths(HttpSession session) {
         if (!isAdmin(session)) return Map.of();
-        return repo.findAll().stream()
+
+        var events = repo.findAll();
+        System.out.println("ANALYTICS /paths, events count = " + events.size());
+
+        return events.stream()
                 .collect(Collectors.groupingBy(
                         e -> Optional.ofNullable(e.getPath()).orElse("/unknown"),
                         Collectors.counting()
@@ -46,8 +74,15 @@ public class AnalyticsController {
     public List<Map.Entry<String, Long>> dangerousIPs(HttpSession session) {
         if (!isAdmin(session)) return List.of();
 
-        Map<String, Long> ipMap = repo.findAll().stream()
-                .collect(Collectors.groupingBy(e -> e.getIp(), Collectors.counting()));
+        var events = repo.findAll();
+        System.out.println("ANALYTICS /ip, events count = " + events.size());
+
+        Map<String, Long> ipMap = events.stream()
+                .filter(e -> e.getIp() != null && !e.getIp().isBlank())
+                .collect(Collectors.groupingBy(
+                        e -> e.getIp(),
+                        Collectors.counting()
+                ));
 
         return ipMap.entrySet().stream()
                 .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
@@ -59,7 +94,11 @@ public class AnalyticsController {
     public Map<Integer, Long> activityByHour(HttpSession session) {
         if (!isAdmin(session)) return Map.of();
 
-        return repo.findAll().stream()
+        var events = repo.findAll();
+        System.out.println("ANALYTICS /hours, events count = " + events.size());
+
+        return events.stream()
+                .filter(e -> e.getTimestamp() != null)
                 .collect(Collectors.groupingBy(
                         e -> e.getTimestamp().getHour(),
                         Collectors.counting()
@@ -70,15 +109,20 @@ public class AnalyticsController {
     public Map<Integer, Map<Integer, Long>> heatmap(HttpSession session) {
         if (!isAdmin(session)) return Map.of();
 
+        var events = repo.findAll();
+        System.out.println("ANALYTICS /heatmap, events count = " + events.size());
+
         Map<Integer, Map<Integer, Long>> map = new HashMap<>();
 
-        repo.findAll().forEach(e -> {
-            int day = e.getTimestamp().getDayOfWeek().getValue(); // 1..7
-            int hour = e.getTimestamp().getHour();
+        events.stream()
+                .filter(e -> e.getTimestamp() != null)
+                .forEach(e -> {
+                    int day = e.getTimestamp().getDayOfWeek().getValue(); // 1..7
+                    int hour = e.getTimestamp().getHour();
 
-            map.putIfAbsent(day, new HashMap<>());
-            map.get(day).merge(hour, 1L, Long::sum);
-        });
+                    map.putIfAbsent(day, new HashMap<>());
+                    map.get(day).merge(hour, 1L, Long::sum);
+                });
 
         return map;
     }
@@ -88,11 +132,24 @@ public class AnalyticsController {
         if (!isAdmin(session)) return Map.of();
 
         var events = repo.findAll();
+        System.out.println("ANALYTICS /risk, events count = " + events.size());
+
         if (events.isEmpty()) return Map.of();
 
-        int min = events.stream().mapToInt(e -> e.getRiskScore()).min().orElse(0);
-        int max = events.stream().mapToInt(e -> e.getRiskScore()).max().orElse(0);
-        double avg = events.stream().mapToInt(e -> e.getRiskScore()).average().orElse(0.0);
+        int min = events.stream()
+                .mapToInt(e -> e.getRiskScore())
+                .min()
+                .orElse(0);
+
+        int max = events.stream()
+                .mapToInt(e -> e.getRiskScore())
+                .max()
+                .orElse(0);
+
+        double avg = events.stream()
+                .mapToInt(e -> e.getRiskScore())
+                .average()
+                .orElse(0.0);
 
         return Map.of(
                 "min", min,

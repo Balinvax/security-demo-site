@@ -4,6 +4,7 @@ import com.securitysite.securitydemosite.model.Role;
 import com.securitysite.securitydemosite.model.User;
 import com.securitysite.securitydemosite.repository.RoleRepository;
 import com.securitysite.securitydemosite.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,11 +16,14 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public UserService(UserRepository userRepository,
-                       RoleRepository roleRepository) {
+                       RoleRepository roleRepository,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional
@@ -31,7 +35,10 @@ public class UserService {
         User user = new User();
         user.setFullName(fullName);
         user.setEmail(email);
-        user.setPassword(rawPassword); // зберігаємо у відкритому вигляді
+
+        // 🔐 ТЕПЕР ЗБЕРІГАЄМО НЕ СИРИЙ ПАРОЛЬ, А ХЕШ
+        String encoded = passwordEncoder.encode(rawPassword);
+        user.setPassword(encoded);
 
         // роль USER
         Role userRole = roleRepository.findByName("USER")
@@ -46,10 +53,35 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @Transactional
     public User authenticate(String email, String rawPassword) {
-        return userRepository.findByEmail(email)
-                .filter(u -> u.getPassword().equals(rawPassword))  // <── виправлено!
-                .orElse(null);
+        Optional<User> opt = userRepository.findByEmail(email);
+        if (opt.isEmpty()) {
+            return null;
+        }
+
+        User user = opt.get();
+        String stored = user.getPassword();
+
+        if (stored == null) {
+            return null;
+        }
+
+
+        if (passwordEncoder.matches(rawPassword, stored)) {
+            return user;
+        }
+
+        if (stored.equals(rawPassword)) {
+            String encoded = passwordEncoder.encode(rawPassword);
+            user.setPassword(encoded);
+            userRepository.save(user);
+            System.out.println("MIGRATED PLAIN PASSWORD TO BCRYPT FOR USER " + email);
+            return user;
+        }
+
+        // 3) Пароль не підійшов
+        return null;
     }
 
     public Optional<User> findById(UUID id) {

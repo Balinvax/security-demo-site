@@ -12,8 +12,13 @@
     <div class="title">Security Demo Site</div>
     <nav>
         <a href="/">Головна</a>
+        <a href="/login">Вхід</a>
+        <a href="/register">Реєстрація</a>
         <a href="/profile">Кабінет</a>
         <a href="/auth/logout">Вихід</a>
+        <a href="/admin">Адмін</a>
+        <a href="/admin-analytics">Аналітика</a>
+        <a href="/admin-events">Журнал подій</a>
     </nav>
 </header>
 
@@ -38,7 +43,10 @@
 
 <script>
     async function loadUsers() {
-        const response = await fetch('/api/users');
+        const response = await fetch('/api/users', {
+            credentials: "include"        // ДОДАЛИ ЦЕ
+        });
+
         const users = await response.json();
 
         let rows = "";
@@ -55,6 +63,7 @@
 
     loadUsers();
 </script>
+
 
 </body>
 </html>

@@ -14,9 +14,6 @@ public class SignatureEngine {
         this.rules = initRules();
     }
 
-    /**
-     * Головний метод: перевіряє запит на наявність збігів із сигнатурами.
-     */
     public List<SignatureMatch> analyze(HttpServletRequest request) {
         List<SignatureMatch> result = new ArrayList<>();
 
@@ -98,8 +95,7 @@ public class SignatureEngine {
     }
 
     /**
-     * Тут оголошуємо набір базових сигнатур (regex-патерни).
-     * У дипломі це можна буде оформити як таблицю "правило – тип атаки – опис".
+     * оголошуємо набір базових сигнатур (regex-патерни).
      */
     private List<SignatureRule> initRules() {
         List<SignatureRule> list = new ArrayList<>();

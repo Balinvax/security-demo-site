@@ -22,7 +22,7 @@ public class ApiController {
     }
 
     // ---------------------------------------------------------
-    // /api/auth/me  (без змін)
+    // /api/auth/me
     // ---------------------------------------------------------
     @GetMapping("/api/auth/me")
     public ResponseEntity<?> currentUser(HttpSession session) {
@@ -51,7 +51,7 @@ public class ApiController {
     }
 
     // ---------------------------------------------------------
-    // /api/public  (без змін)
+    // /api/public
     // ---------------------------------------------------------
     @GetMapping("/api/public")
     public Map<String, String> publicData() {
@@ -60,20 +60,42 @@ public class ApiController {
         return data;
     }
 
+
+    private boolean isAdmin(HttpSession session) {
+
+        if (session == null) {
+            System.out.println("SESSION = null");
+            return false;
+        }
+
+        Object isLoggedObj = session.getAttribute("isLogged");
+        Object roleObj = session.getAttribute("role");
+
+
+        if (!(isLoggedObj instanceof Boolean isLogged) || !isLogged) {
+            return false;
+        }
+        if (roleObj == null) return false;
+
+        String role = roleObj.toString();
+        return role.equals("ADMIN")
+                || role.equals("ROLE_ADMIN")
+                || role.contains("ADMIN");
+    }
+
     // ---------------------------------------------------------
-    // /api/users  (ВИПРАВЛЕНО)
+    // /api/users
     // ---------------------------------------------------------
     @GetMapping("/api/users")
     public List<Map<String, Object>> getUsers(HttpSession session) {
 
-        Boolean isLogged = (Boolean) session.getAttribute("isLogged");
-        String role = (String) session.getAttribute("role");
-
-        if (isLogged == null || !isLogged || role == null || !role.equals("ADMIN")) {
+        if (!isAdmin(session)) {
+            System.out.println("/api/users: NOT ADMIN -> []");
             return Collections.emptyList();
         }
 
         List<User> users = userRepository.findAll();
+        System.out.println("/api/users: RETURN " + users.size() + " users");
 
         List<Map<String, Object>> result = new ArrayList<>();
 

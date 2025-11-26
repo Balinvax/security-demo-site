@@ -12,8 +12,13 @@
     <div class="title">Security Demo Site — Analytics</div>
     <nav>
         <a href="/">Головна</a>
-        <a href="/admin">Адмін</a>
+        <a href="/login">Вхід</a>
+        <a href="/register">Реєстрація</a>
+        <a href="/profile">Кабінет</a>
         <a href="/auth/logout">Вихід</a>
+        <a href="/admin">Адмін</a>
+        <a href="/admin-analytics">Аналітика</a>
+        <a href="/admin-events">Журнал подій</a>
     </nav>
 </header>
 
@@ -53,8 +58,11 @@
 
 <script>
     async function load(id, url) {
-        const r = await fetch(url);
-        document.getElementById(id).innerText = JSON.stringify(await r.json(), null, 2);
+        const r = await fetch(url, {
+            credentials: "include"
+        });
+        document.getElementById(id).innerText =
+            JSON.stringify(await r.json(), null, 2);
     }
 
     load("rules", "/api/admin/analytics/rules");
@@ -63,6 +71,7 @@
     load("hours", "/api/admin/analytics/hours");
     load("heatmap", "/api/admin/analytics/heatmap");
     load("risk", "/api/admin/analytics/risk");
+
 </script>
 
 </body>
