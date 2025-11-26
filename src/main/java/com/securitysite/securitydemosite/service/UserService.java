@@ -67,13 +67,11 @@ public class UserService {
             return null;
         }
 
-        // 1) Нормальний випадок: пароль уже захешований (BCrypt)
+
         if (passwordEncoder.matches(rawPassword, stored)) {
             return user;
         }
 
-        // 2) МІГРАЦІЯ: якщо в БД ще лежить старий "голий" пароль
-        //    тобто збережене значення == введеному зараз
         if (stored.equals(rawPassword)) {
             String encoded = passwordEncoder.encode(rawPassword);
             user.setPassword(encoded);
