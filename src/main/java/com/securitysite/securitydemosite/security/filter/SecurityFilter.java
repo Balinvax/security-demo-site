@@ -18,9 +18,7 @@ import jakarta.servlet.http.HttpServletResponseWrapper;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SecurityFilter implements Filter {
 
@@ -33,6 +31,12 @@ public class SecurityFilter implements Filter {
 
     @Value("${security.traffic.enabled:true}")
     private boolean trafficEnabled;
+
+    // ---------- НОВЕ ----------
+    @Value("${security.whitelist:}")
+    private String whitelistRaw;
+
+    private List<String> whitelist = new ArrayList<>();
 
     public SecurityFilter(
             RiskEngine riskEngine,
@@ -51,20 +55,58 @@ public class SecurityFilter implements Filter {
     }
 
     @Override
+    public void init(FilterConfig filterConfig) {
+        // Парсимо список у масив
+        if (whitelistRaw != null && !whitelistRaw.isEmpty()) {
+            whitelist = Arrays.stream(whitelistRaw.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .toList();
+        }
+    }
+
+    // -------- Перевірка білого списку ----------
+    private boolean isWhitelisted(String path) {
+        if (whitelist.isEmpty()) return false;
+
+        for (String pattern : whitelist) {
+
+            // підтримка /path/*
+            if (pattern.endsWith("/*")) {
+                String base = pattern.substring(0, pattern.length() - 2);
+                if (path.startsWith(base)) return true;
+            }
+
+            // точне співпадіння
+            if (pattern.equals(path)) return true;
+        }
+        return false;
+    }
+
+    @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {
 
         HttpServletRequest request = (HttpServletRequest) req;
         SecurityResponseWrapper response = new SecurityResponseWrapper((HttpServletResponse) res);
 
-        String ip = request.getRemoteAddr();
-        String method = request.getMethod();
         String path = request.getRequestURI();
+        String method = request.getMethod();
         Map<String, String[]> params = request.getParameterMap();
+
+        // ---------------------------------------------------------
+        // 0. БІЛИЙ СПИСОК — ПРОПУСКАЄМО ВСЕ БЕЗ АНАЛІЗУ
+        // ---------------------------------------------------------
+        if (isWhitelisted(path)) {
+
+            logService.log(request, "WHITELIST", 0, "ALLOW", params);
+
+            chain.doFilter(request, response);
+            return;
+        }
 
         // =====================================================
         // 1. Traffic Analyzer (Rate-limit, POST flood...)
-        //    — вимикається у тестовому профілі
         // =====================================================
         if (trafficEnabled) {
             List<String> preAlerts = trafficAnalyzer.analyze(request, 0);
@@ -100,7 +142,7 @@ public class SecurityFilter implements Filter {
         riskScore += adaptive.score;
 
         // =====================================================
-        // 4. Signature Engine (XSS, SQLi, Path Traversal)
+        // 4. Signature Engine
         // =====================================================
         List<SignatureMatch> matches = signatureEngine.analyze(request);
         if (!matches.isEmpty()) {
@@ -108,11 +150,7 @@ public class SecurityFilter implements Filter {
             SignatureMatch m = matches.get(0);
             String ruleName = "SIG:" + m.attackType().name() + ":" + m.ruleId();
 
-            logService.log(request,
-                    ruleName,
-                    90,
-                    "BLOCK",
-                    params);
+            logService.log(request, ruleName, 90, "BLOCK", params);
 
             response.setStatus(403);
             response.getWriter().write("Blocked by signature rule");
@@ -147,11 +185,7 @@ public class SecurityFilter implements Filter {
         // 6. Risk threshold
         // =====================================================
         if (riskScore >= 70) {
-            logService.log(request,
-                    "RISK_ENGINE",
-                    riskScore,
-                    "BLOCK",
-                    params);
+            logService.log(request, "RISK_ENGINE", riskScore, "BLOCK", params);
 
             response.setStatus(403);
             response.getWriter().write("Blocked by risk engine");
@@ -161,19 +195,12 @@ public class SecurityFilter implements Filter {
         // =====================================================
         // 7. Log ALLOW
         // =====================================================
-        logService.log(request,
-                "OK",
-                riskScore,
-                "ALLOW",
-                params);
+        logService.log(request, "OK", riskScore, "ALLOW", params);
 
-        // =====================================================
-        // 8. Continue filter chain
-        // =====================================================
         chain.doFilter(request, response);
 
         // =====================================================
-        // 9. Post-response analysis (404 → scanner)
+        // 8. Post-response (404 → scanner)
         // =====================================================
         if (trafficEnabled) {
             int statusCode = response.getStatus();
