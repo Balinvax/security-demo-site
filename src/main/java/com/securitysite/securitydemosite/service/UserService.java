@@ -48,7 +48,7 @@ public class UserService {
 
     public User authenticate(String email, String rawPassword) {
         return userRepository.findByEmail(email)
-                .filter(u -> u.getPassword().equals(rawPassword))  // <── виправлено!
+                .filter(u -> u.getPassword().equals(rawPassword))
                 .orElse(null);
     }
 

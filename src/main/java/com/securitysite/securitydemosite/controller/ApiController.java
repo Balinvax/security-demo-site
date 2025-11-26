@@ -22,7 +22,7 @@ public class ApiController {
     }
 
     // ---------------------------------------------------------
-    // /api/auth/me  (як було)
+    // /api/auth/me
     // ---------------------------------------------------------
     @GetMapping("/api/auth/me")
     public ResponseEntity<?> currentUser(HttpSession session) {
@@ -51,7 +51,7 @@ public class ApiController {
     }
 
     // ---------------------------------------------------------
-    // /api/public  (як було)
+    // /api/public
     // ---------------------------------------------------------
     @GetMapping("/api/public")
     public Map<String, String> publicData() {
@@ -60,9 +60,8 @@ public class ApiController {
         return data;
     }
 
-    // ===== Спільна перевірка адміна =====
+
     private boolean isAdmin(HttpSession session) {
-        System.out.println("=== /api/users SECURITY CHECK ===");
 
         if (session == null) {
             System.out.println("SESSION = null");
@@ -72,9 +71,6 @@ public class ApiController {
         Object isLoggedObj = session.getAttribute("isLogged");
         Object roleObj = session.getAttribute("role");
 
-        System.out.println("SESSION ID   = " + session.getId());
-        System.out.println("isLogged     = " + isLoggedObj);
-        System.out.println("SESSION ROLE = " + roleObj);
 
         if (!(isLoggedObj instanceof Boolean isLogged) || !isLogged) {
             return false;

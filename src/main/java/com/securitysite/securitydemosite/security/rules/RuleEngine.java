@@ -3,10 +3,6 @@ package com.securitysite.securitydemosite.security.rules;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static java.lang.Double.parseDouble;
 
 public class RuleEngine {
 
@@ -36,7 +32,7 @@ public class RuleEngine {
         cond = cond.trim();
 
         // ============================
-        // 1) CONTAINS
+        // CONTAINS
         // ============================
         if (cond.contains(" CONTAINS ")) {
             String[] parts = cond.split(" CONTAINS ");
@@ -46,7 +42,7 @@ public class RuleEngine {
         }
 
         // ============================
-        // 2) MATCHES /.../
+        // MATCHES /.../
         // ============================
         if (cond.contains(" MATCHES ")) {
             String[] parts = cond.split(" MATCHES ");
@@ -60,7 +56,7 @@ public class RuleEngine {
         }
 
         // ============================
-        // 3) NOT IN [...]
+        // NOT IN [...]
         // ============================
         if (cond.contains(" NOT IN ")) {
             String[] parts = cond.split(" NOT IN ");
@@ -70,7 +66,7 @@ public class RuleEngine {
         }
 
         // ============================
-        // 4) IN [...]
+        // IN [...]
         // ============================
         if (cond.contains(" IN ")) {
             String[] parts = cond.split(" IN ");
@@ -80,7 +76,7 @@ public class RuleEngine {
         }
 
         // ============================
-        // 5) !=
+        //  !=
         // ============================
         if (cond.contains("!=")) {
             String[] parts = cond.split("!=");
@@ -90,7 +86,7 @@ public class RuleEngine {
         }
 
         // ============================
-        // 6) >
+        //  >
         // ============================
         if (cond.contains(">")) {
             String[] parts = cond.split(">");
@@ -112,8 +108,6 @@ public class RuleEngine {
 
         return false; // якщо не впізнали конструкцію
     }
-
-
 
 
     private String resolveField(String token, HttpServletRequest req, Map<String, Object> ctx) {

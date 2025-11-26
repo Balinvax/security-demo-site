@@ -1,11 +1,14 @@
 package com.securitysite.securitydemosite.controller;
 
-import com.securitysite.securitydemosite.model.User;
 import com.securitysite.securitydemosite.model.Role;
+import com.securitysite.securitydemosite.model.User;
 import com.securitysite.securitydemosite.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.Objects;
 
@@ -79,22 +82,12 @@ public class AuthController {
         }
 
         session.setAttribute("role", sessionRole);
-
-        System.out.println("=== LOGIN SUCCESS ===");
-        System.out.println("USER ID      = " + user.getId());
-        System.out.println("EMAIL        = " + user.getEmail());
-        System.out.println("SESSION ID   = " + session.getId());
-        System.out.println("SESSION ROLE = " + sessionRole);
-        System.out.println("isAdminByRole  = " + isAdminByRole);
-        System.out.println("isAdminByEmail = " + isAdminByEmail);
-
         return "redirect:/profile";
     }
 
     @GetMapping("/logout")
     public String logout(HttpSession session) {
         if (session != null) {
-            System.out.println("=== LOGOUT === SESSION ID = " + session.getId());
             session.invalidate();
         }
         return "redirect:/";

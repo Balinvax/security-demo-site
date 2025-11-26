@@ -2,9 +2,14 @@ package com.securitysite.securitydemosite.controller;
 
 import com.securitysite.securitydemosite.repository.SecurityEventRepository;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -17,9 +22,9 @@ public class AnalyticsController {
         this.repo = repo;
     }
 
-    // Уніфікована перевірка адміна, як у SecurityEventsApi
+    // Уніфікована перевірка адміна
     private boolean isAdmin(HttpSession session) {
-        System.out.println("=== ANALYTICS SECURITY CHECK ===");
+
 
         if (session == null) {
             System.out.println("SESSION = null");
@@ -27,8 +32,6 @@ public class AnalyticsController {
         }
 
         Object role = session.getAttribute("role");
-        System.out.println("SESSION ID   = " + session.getId());
-        System.out.println("SESSION ROLE = " + role);
 
         if (role == null) return false;
 

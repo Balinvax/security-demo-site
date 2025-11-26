@@ -20,18 +20,17 @@ public class SecurityEventsApi {
         this.repo = repo;
     }
 
-    // ====== Перевірка ролі + логування ======
+
     private boolean isAdmin(HttpSession session) {
-        System.out.println("=== EVENTS SECURITY CHECK ===");
+
 
         if (session == null) {
-            System.out.println("SESSION = null");
+
             return false;
         }
 
         Object role = session.getAttribute("role");
-        System.out.println("SESSION ID   = " + session.getId());
-        System.out.println("SESSION ROLE = " + role);
+
 
         if (role == null) return false;
 
@@ -82,8 +81,6 @@ public class SecurityEventsApi {
         return repo.findByTimestampBetween(s, e);
     }
 
-    // html input type="datetime-local" зазвичай дає формат "yyyy-MM-dd'T'HH:mm"
-    // LocalDateTime.parse очікує секунди, тому додамо fallback-формат
     private LocalDateTime parseClientDateTime(String value) {
         if (value == null || value.isBlank()) {
             return null;

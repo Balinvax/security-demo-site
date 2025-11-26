@@ -9,12 +9,10 @@ import com.securitysite.securitydemosite.security.signature.SignatureEngine;
 import com.securitysite.securitydemosite.security.signature.SignatureMatch;
 import com.securitysite.securitydemosite.security.traffic.TrafficAnalyzer;
 import com.securitysite.securitydemosite.service.SecurityLogService;
-
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletResponseWrapper;
-
 import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
@@ -32,7 +30,6 @@ public class SecurityFilter implements Filter {
     @Value("${security.traffic.enabled:true}")
     private boolean trafficEnabled;
 
-    // ---------- НОВЕ ----------
     @Value("${security.whitelist:}")
     private String whitelistRaw;
 
@@ -56,7 +53,6 @@ public class SecurityFilter implements Filter {
 
     @Override
     public void init(FilterConfig filterConfig) {
-        // Парсимо список у масив
         if (whitelistRaw != null && !whitelistRaw.isEmpty()) {
             whitelist = Arrays.stream(whitelistRaw.split(","))
                     .map(String::trim)
@@ -95,7 +91,7 @@ public class SecurityFilter implements Filter {
         Map<String, String[]> params = request.getParameterMap();
 
         // ---------------------------------------------------------
-        // 0. БІЛИЙ СПИСОК — ПРОПУСКАЄМО ВСЕ БЕЗ АНАЛІЗУ
+        // БІЛИЙ СПИСОК — ПРОПУСКАЄМО ВСЕ БЕЗ АНАЛІЗУ
         // ---------------------------------------------------------
         if (isWhitelisted(path)) {
 
@@ -106,7 +102,7 @@ public class SecurityFilter implements Filter {
         }
 
         // =====================================================
-        // 1. Traffic Analyzer (Rate-limit, POST flood...)
+        // Traffic Analyzer (Rate-limit, POST flood...)
         // =====================================================
         if (trafficEnabled) {
             List<String> preAlerts = trafficAnalyzer.analyze(request, 0);
@@ -130,19 +126,19 @@ public class SecurityFilter implements Filter {
         }
 
         // =====================================================
-        // 2. Risk Engine
+        // Risk Engine
         // =====================================================
         RiskScore baseRisk = riskEngine.evaluate(request);
         int riskScore = baseRisk.value();
 
         // =====================================================
-        // 3. Adaptive Engine
+        // Adaptive Engine
         // =====================================================
         RiskEvent adaptive = adaptiveEngine.process(request, 0, 200);
         riskScore += adaptive.score;
 
         // =====================================================
-        // 4. Signature Engine
+        // Signature Engine
         // =====================================================
         List<SignatureMatch> matches = signatureEngine.analyze(request);
         if (!matches.isEmpty()) {
@@ -158,7 +154,7 @@ public class SecurityFilter implements Filter {
         }
 
         // =====================================================
-        // 5. Rule DSL Engine
+        // Rule DSL Engine
         // =====================================================
         Map<String, Object> ctx = new HashMap<>();
 
@@ -182,7 +178,7 @@ public class SecurityFilter implements Filter {
         }
 
         // =====================================================
-        // 6. Risk threshold
+        // Risk threshold
         // =====================================================
         if (riskScore >= 70) {
             logService.log(request, "RISK_ENGINE", riskScore, "BLOCK", params);
@@ -193,14 +189,14 @@ public class SecurityFilter implements Filter {
         }
 
         // =====================================================
-        // 7. Log ALLOW
+        // Log ALLOW
         // =====================================================
         logService.log(request, "OK", riskScore, "ALLOW", params);
 
         chain.doFilter(request, response);
 
         // =====================================================
-        // 8. Post-response (404 → scanner)
+        // Post-response (404 → scanner)
         // =====================================================
         if (trafficEnabled) {
             int statusCode = response.getStatus();

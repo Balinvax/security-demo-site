@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class AdminController {
 
 
-
     @GetMapping("/admin-events")
     public String adminEvents(HttpSession session) {
 

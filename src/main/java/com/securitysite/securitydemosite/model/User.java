@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users") // НЕ "user", бо це зарезервоване слово в PostgreSQL
+@Table(name = "users")
 @Data
 @NoArgsConstructor
 public class User {
