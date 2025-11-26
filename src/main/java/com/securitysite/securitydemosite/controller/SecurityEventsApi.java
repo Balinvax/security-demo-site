@@ -6,6 +6,8 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @RestController
@@ -18,30 +20,48 @@ public class SecurityEventsApi {
         this.repo = repo;
     }
 
+    // ====== Перевірка ролі + логування ======
+    private boolean isAdmin(HttpSession session) {
+        System.out.println("=== EVENTS SECURITY CHECK ===");
+
+        if (session == null) {
+            System.out.println("SESSION = null");
+            return false;
+        }
+
+        Object role = session.getAttribute("role");
+        System.out.println("SESSION ID   = " + session.getId());
+        System.out.println("SESSION ROLE = " + role);
+
+        if (role == null) return false;
+
+        String r = role.toString();
+        // покриваємо варіанти "ADMIN", "ROLE_ADMIN", "ROLE_ADMIN,ROLE_USER" і т.п.
+        return r.equals("ADMIN")
+                || r.equals("ROLE_ADMIN")
+                || r.contains("ADMIN");
+    }
+
+    // ====== Ендпоїнти ======
+
     @GetMapping
     public List<SecurityEvent> getAll(HttpSession session) {
-        if (!isAdmin(session)) {
-            // тимчасово просто показуємо все, щоб побачити журнал
-            System.out.println("[EVENTS] Access without ADMIN, but returning all for debugging");
-        }
+        if (!isAdmin(session)) return List.of();
+        // можеш замінити на findAllByOrderByTimestampDesc(), якщо додаси в репозиторій
         return repo.findAll();
     }
 
     @GetMapping("/ip/{ip}")
     public List<SecurityEvent> getByIp(@PathVariable String ip,
                                        HttpSession session) {
-        if (!isAdmin(session)) {
-            System.out.println("[EVENTS] IP filter without ADMIN, debug mode");
-        }
+        if (!isAdmin(session)) return List.of();
         return repo.findByIp(ip);
     }
 
     @GetMapping("/rule/{rule}")
     public List<SecurityEvent> getByRule(@PathVariable String rule,
                                          HttpSession session) {
-        if (!isAdmin(session)) {
-            System.out.println("[EVENTS] Rule filter without ADMIN, debug mode");
-        }
+        if (!isAdmin(session)) return List.of();
         return repo.findByRuleTrigger(rule);
     }
 
@@ -49,27 +69,37 @@ public class SecurityEventsApi {
     public List<SecurityEvent> getByDate(@RequestParam String start,
                                          @RequestParam String end,
                                          HttpSession session) {
-        if (!isAdmin(session)) {
-            System.out.println("[EVENTS] Date filter without ADMIN, debug mode");
-        }
+        if (!isAdmin(session)) return List.of();
 
-        LocalDateTime s = LocalDateTime.parse(start);
-        LocalDateTime e = LocalDateTime.parse(end);
+        LocalDateTime s = parseClientDateTime(start);
+        LocalDateTime e = parseClientDateTime(end);
+
+        if (s == null || e == null) {
+            System.out.println("BAD DATE RANGE: start=" + start + ", end=" + end);
+            return List.of();
+        }
 
         return repo.findByTimestampBetween(s, e);
     }
 
-    private boolean isAdmin(HttpSession session) {
-        Object role = (session != null) ? session.getAttribute("role") : null;
-        System.out.println("=== SECURITY CHECK ===");
-        System.out.println("SESSION = " + session);
-        System.out.println("SESSION ROLE = " + role);
+    // html input type="datetime-local" зазвичай дає формат "yyyy-MM-dd'T'HH:mm"
+    // LocalDateTime.parse очікує секунди, тому додамо fallback-формат
+    private LocalDateTime parseClientDateTime(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
 
-        // TODO: повернути нормальну перевірку перед захистом диплому:
-        // return "ADMIN".equals(role) || "ROLE_ADMIN".equals(role);
-
-        // А поки — завжди true, щоб ти міг бачити журнал
-        return true;
+        try {
+            return LocalDateTime.parse(value);
+        } catch (DateTimeParseException ex) {
+            try {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+                return LocalDateTime.parse(value, formatter);
+            } catch (DateTimeParseException ex2) {
+                System.out.println("Failed to parse datetime: " + value +
+                        " | " + ex2.getMessage());
+                return null;
+            }
+        }
     }
 }
-

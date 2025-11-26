@@ -38,7 +38,10 @@
 
 <script>
     async function loadUsers() {
-        const response = await fetch('/api/users');
+        const response = await fetch('/api/users', {
+            credentials: "include"        // ДОДАЛИ ЦЕ
+        });
+
         const users = await response.json();
 
         let rows = "";
@@ -55,6 +58,7 @@
 
     loadUsers();
 </script>
+
 
 </body>
 </html>

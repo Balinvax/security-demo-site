@@ -55,7 +55,9 @@
 
 <script>
     async function load(url) {
-        const r = await fetch(url);
+        const r = await fetch(url, {
+            credentials: "include"
+        });
         const data = await r.json();
         let html = "";
 
