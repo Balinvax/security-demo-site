@@ -99,13 +99,14 @@
 </main>
 
 <script>
-    // Форматування ISO-дати
+    // Форматування ISO-дати у щось читабельне типу "26.11.2025 20:00:04"
     function formatDate(isoString) {
         if (!isoString) return '';
         const d = new Date(isoString);
-        if (isNaN(d.getTime())) return isoString;
+        if (isNaN(d.getTime())) return isoString; // fallback, якщо формат інший
 
         const pad = n => n.toString().padStart(2, '0');
+
         const day   = pad(d.getDate());
         const month = pad(d.getMonth() + 1);
         const year  = d.getFullYear();
@@ -116,7 +117,7 @@
         return `${day}.${month}.${year} ${hour}:${min}:${sec}`;
     }
 
-    // Екранування від XSS
+    // Просте екранування для запобігання XSS в журналі
     function esc(value) {
         if (value === null || value === undefined) return '';
         return String(value)
@@ -127,61 +128,84 @@
             .replace(/'/g, '&#39;');
     }
 
+    // Завантаження даних та побудова таблиці
     async function load(url) {
-        const r = await fetch(url, { credentials: "include" });
-        const data = await r.json();
+        try {
+            const r = await fetch(url, { credentials: "include" });
 
-        let html = "";
+            if (!r.ok) {
+                console.error('Failed to load events:', r.status, await r.text());
+                document.getElementById("rows").innerHTML =
+                    `<tr><td colspan="7">Помилка завантаження (${r.status})</td></tr>`;
+                return;
+            }
 
-        for (const e of data) {
-            const ip = (e.ip === '0:0:0:0:0:0:0:1') ? '127.0.0.1' : e.ip;
+            const data = await r.json();
+            let html = "";
 
-            html += `<tr>
-                <td>${esc(formatDate(e.timestamp))}</td>
-                <td>${esc(ip)}</td>
-                <td>${esc(e.method)}</td>
-                <td>${esc(e.path)}</td>
-                <td>${esc(e.ruleTrigger)}</td>
-                <td>${esc(e.riskScore)}</td>
-                <td>${esc(e.decision)}</td>
-            </tr>`;
+            for (const e of data) {
+                const ip = (e.ip === '0:0:0:0:0:0:0:1') ? '127.0.0.1' : e.ip;
+
+                html += `<tr>
+                    <td>${esc(formatDate(e.timestamp))}</td>
+                    <td>${esc(ip)}</td>
+                    <td>${esc(e.method)}</td>
+                    <td>${esc(e.path)}</td>
+                    <td>${esc(e.ruleTrigger)}</td>
+                    <td>${esc(e.riskScore)}</td>
+                    <td>${esc(e.decision)}</td>
+                </tr>`;
+            }
+
+            if (!data || data.length === 0) {
+                html = `<tr><td colspan="7">Нічого не знайдено за вказаними фільтрами</td></tr>`;
+            }
+
+            document.getElementById("rows").innerHTML = html;
+        } catch (e) {
+            console.error('Error loading events:', e);
+            document.getElementById("rows").innerHTML =
+                `<tr><td colspan="7">Сталася помилка при завантаженні даних</td></tr>`;
         }
-
-        document.getElementById("rows").innerHTML = html;
     }
 
-    function loadAll() { load('/api/admin/events'); }
-
-    function filterByIp() {
-        const ip = document.getElementById('ip').value.trim();
-        if (!ip) {
-            loadAll();
-        } else {
-            load('/api/admin/events/ip/' + encodeURIComponent(ip));
-        }
-    }
-
-    function filterByRule() {
+    // Застосування всіх фільтрів разом (IP + правило + дата)
+    function applyFilters() {
+        const ip   = document.getElementById('ip').value.trim();
         const rule = document.getElementById('rule').value.trim();
-        if (!rule) {
-            loadAll();
-        } else {
-            load('/api/admin/events/rule/' + encodeURIComponent(rule));
-        }
+        const s    = document.getElementById('start').value;
+        const e    = document.getElementById('end').value;
+
+        const params = new URLSearchParams();
+
+        if (ip)   params.append('ip', ip);
+        if (rule) params.append('rule', rule);
+        if (s)    params.append('start', s);
+        if (e)    params.append('end', e);
+
+        const qs = params.toString();
+        const url = '/api/admin/events/filter' + (qs ? '?' + qs : '');
+        load(url);
     }
 
-    function filterByDate() {
-        const s = document.getElementById('start').value;
-        const e = document.getElementById('end').value;
-        if (!s || !e) {
-            loadAll();
-        } else {
-            load(`/api/admin/events/date?start=${encodeURIComponent(s)}&end=${encodeURIComponent(e)}`);
-        }
+    // Скидання фільтрів і показ усіх подій
+    function loadAll() {
+        document.getElementById('ip').value = '';
+        document.getElementById('rule').value = '';
+        document.getElementById('start').value = '';
+        document.getElementById('end').value = '';
+        load('/api/admin/events');
     }
 
+    // Старі функції-кнопки тепер просто викликають комбінований фільтр
+    function filterByIp()   { applyFilters(); }
+    function filterByRule() { applyFilters(); }
+    function filterByDate() { applyFilters(); }
+
+    // Перше завантаження — показати всі події
     loadAll();
 </script>
+
 
 </body>
 </html>

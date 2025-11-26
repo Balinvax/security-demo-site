@@ -11,5 +11,9 @@ public interface SecurityEventRepository extends JpaRepository<SecurityEvent, UU
 
     List<SecurityEvent> findByIp(String ip);
     List<SecurityEvent> findByRuleTrigger(String ruleTrigger);
+    List<SecurityEvent> findByRuleTriggerContainingIgnoreCase(String ruleTrigger);
     List<SecurityEvent> findByTimestampBetween(LocalDateTime start, LocalDateTime end);
+    List<SecurityEvent> findAll();
+
+
 }
